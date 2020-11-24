@@ -31,7 +31,7 @@ Contents
    advanced/aggregation.rst
    advanced/weth_wrapping.rst
    advanced/private_liquidity_pools.rst
-   architecture/mtx.rst
+   advanced/mtx.rst
 
 .. toctree::
    :maxdepth: 2
