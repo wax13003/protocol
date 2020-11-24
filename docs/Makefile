@@ -49,7 +49,11 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
+addresses:
+	@python scripts/generate_addresses.py > basics/addresses.rst
+
 html:
+	@make addresses
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
