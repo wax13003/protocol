@@ -20,6 +20,8 @@ Contents
    basics/functions.rst
    basics/events.rst
    basics/allowances.rst
+   basics/protocol_fees.rst
+   basics/addresses.rst
 
 .. toctree::
    :maxdepth: 2
@@ -29,7 +31,7 @@ Contents
    advanced/aggregation.rst
    advanced/weth_wrapping.rst
    advanced/private_liquidity_pools.rst
-   advanced/request_for_quote.rst
+   architecture/mtx.rst
 
 .. toctree::
    :maxdepth: 2
