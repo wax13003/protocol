@@ -106,6 +106,9 @@ There are two types of signatures supported: ``EIP712`` and ``EthSign``.
 
 In both cases, the ``@0x/protocol-utils`` package simplifies generating these signatures.
 
+.. note::
+    The Protocol Utils package is still under development. This message will be removed once the package is published. - 11/24/2020.
+
 .. code-block:: javascript
 
    const utils = require('@0x/protocol-utils');
