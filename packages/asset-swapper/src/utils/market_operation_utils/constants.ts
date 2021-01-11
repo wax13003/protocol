@@ -1,5 +1,6 @@
 import { ChainId } from '@0x/contract-addresses';
 import { BigNumber } from '@0x/utils';
+import { BlockParamLiteral } from 'ethereum-types';
 
 import { BridgeContractAddresses } from '../../types';
 
@@ -668,4 +669,5 @@ export const DEFAULT_GET_MARKET_ORDERS_OPTS: GetMarketOrdersOpts = {
     allowFallback: true,
     shouldGenerateQuoteReport: false,
     tokenAdjacencyGraph: { default: [] },
+    blockNumber: BlockParamLiteral.Latest,
 };

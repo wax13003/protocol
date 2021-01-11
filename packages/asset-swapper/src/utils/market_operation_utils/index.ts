@@ -159,6 +159,7 @@ export class MarketOperationUtils {
 
         // Call the sampler contract.
         const samplerPromise = this._sampler.executeAsync(
+            _opts.blockNumber,
             this._sampler.getTokenDecimals(makerToken, takerToken),
             // Get native order fillable amounts.
             this._sampler.getOrderFillableTakerAmounts(nativeOrders, this.contractAddresses.exchange),
@@ -278,6 +279,7 @@ export class MarketOperationUtils {
 
         // Call the sampler contract.
         const samplerPromise = this._sampler.executeAsync(
+            _opts.blockNumber,
             this._sampler.getTokenDecimals(makerToken, takerToken),
             // Get native order fillable amounts.
             this._sampler.getOrderFillableMakerAmounts(nativeOrders, this.contractAddresses.exchange),
@@ -428,7 +430,7 @@ export class MarketOperationUtils {
             ),
         ];
 
-        const executeResults = await this._sampler.executeBatchAsync(ops);
+        const executeResults = await this._sampler.executeBatchAsync(_opts.blockNumber, ops);
         const batchOrderFillableAmounts = executeResults.splice(0, batchNativeOrders.length) as BigNumber[][];
         const batchEthToTakerAssetRate = executeResults.splice(0, batchNativeOrders.length) as BigNumber[];
         const batchDexQuotes = executeResults.splice(0, batchNativeOrders.length) as DexSample[][][];

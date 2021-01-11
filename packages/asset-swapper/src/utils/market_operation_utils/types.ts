@@ -1,6 +1,7 @@
 import { RFQTIndicativeQuote } from '@0x/quote-server';
 import { MarketOperation, SignedOrder } from '@0x/types';
 import { BigNumber } from '@0x/utils';
+import { BlockParam } from 'ethereum-types';
 
 import { RfqtFirmQuoteValidator, RfqtRequestOpts, SignedOrderWithFillableAmounts } from '../../types';
 import { QuoteRequestor } from '../../utils/quote_requestor';
@@ -323,6 +324,10 @@ export interface GetMarketOrdersOpts {
      * hopping to. E.g DAI->USDC via an adjacent token WETH
      */
     tokenAdjacencyGraph: TokenAdjacencyGraph;
+    /**
+     *  The block number to perform a quote on. Defaults to latest
+     */
+    blockNumber: BlockParam;
 }
 
 /**

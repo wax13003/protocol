@@ -1,4 +1,5 @@
 import { BigNumber, NULL_BYTES } from '@0x/utils';
+import { BlockParam } from 'ethereum-types';
 
 import { SamplerOverrides } from '../../types';
 import { ERC20BridgeSamplerContract } from '../../wrappers';
@@ -56,14 +57,14 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1
-    >(...ops: [T1]): Promise<[
+    >(block: BlockParam, ...ops: [T1]): Promise<[
         BatchedOperationResult<T1>
     ]>;
 
     // prettier-ignore
     public async executeAsync<
         T1, T2
-    >(...ops: [T1, T2]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>
     ]>;
@@ -71,7 +72,7 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1, T2, T3
-    >(...ops: [T1, T2, T3]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2, T3]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>,
         BatchedOperationResult<T3>
@@ -80,7 +81,7 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1, T2, T3, T4
-    >(...ops: [T1, T2, T3, T4]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2, T3, T4]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>,
         BatchedOperationResult<T3>,
@@ -90,7 +91,7 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1, T2, T3, T4, T5
-    >(...ops: [T1, T2, T3, T4, T5]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2, T3, T4, T5]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>,
         BatchedOperationResult<T3>,
@@ -101,7 +102,7 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1, T2, T3, T4, T5, T6
-    >(...ops: [T1, T2, T3, T4, T5, T6]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2, T3, T4, T5, T6]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>,
         BatchedOperationResult<T3>,
@@ -113,7 +114,7 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1, T2, T3, T4, T5, T6, T7
-    >(...ops: [T1, T2, T3, T4, T5, T6, T7]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2, T3, T4, T5, T6, T7]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>,
         BatchedOperationResult<T3>,
@@ -126,7 +127,7 @@ export class DexOrderSampler extends SamplerOperations {
     // prettier-ignore
     public async executeAsync<
         T1, T2, T3, T4, T5, T6, T7, T8
-    >(...ops: [T1, T2, T3, T4, T5, T6, T7, T8]): Promise<[
+    >(block: BlockParam, ...ops: [T1, T2, T3, T4, T5, T6, T7, T8]): Promise<[
         BatchedOperationResult<T1>,
         BatchedOperationResult<T2>,
         BatchedOperationResult<T3>,
@@ -140,19 +141,17 @@ export class DexOrderSampler extends SamplerOperations {
     /**
      * Run a series of operations from `DexOrderSampler.ops` in a single transaction.
      */
-    public async executeAsync(...ops: any[]): Promise<any[]> {
-        return this.executeBatchAsync(ops);
+    public async executeAsync(block: BlockParam, ...ops: any[]): Promise<any[]> {
+        return this.executeBatchAsync(block, ops);
     }
 
     /**
      * Run a series of operations from `DexOrderSampler.ops` in a single transaction.
      * Takes an arbitrary length array, but is not typesafe.
      */
-    public async executeBatchAsync<T extends Array<BatchedOperation<any>>>(ops: T): Promise<any[]> {
+    public async executeBatchAsync<T extends Array<BatchedOperation<any>>>(block: BlockParam, ops: T): Promise<any[]> {
         const callDatas = ops.map(o => o.encodeCall());
-        const { overrides, block } = this._samplerOverrides
-            ? this._samplerOverrides
-            : { overrides: undefined, block: undefined };
+        const { overrides } = this._samplerOverrides ? this._samplerOverrides : { overrides: undefined };
 
         // All operations are NOOPs
         if (callDatas.every(cd => cd === NULL_BYTES)) {
