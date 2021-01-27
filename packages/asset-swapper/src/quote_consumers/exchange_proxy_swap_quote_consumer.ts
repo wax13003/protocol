@@ -348,7 +348,7 @@ function getFQTTransformerDataFromOptimizedOrders(
                     order: rfqData.order,
                     signature: rfqData.signature,
                     maxTakerTokenFillAmount: order.takerAmount,
-                });
+                } as any); // TODO(V4): FIX ME
                 break;
             case FillQuoteTransformerOrderType.Limit:
                 const limitData = order.fillData as NativeLimitOrderFillData;
