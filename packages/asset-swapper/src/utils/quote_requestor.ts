@@ -527,30 +527,10 @@ export class QuoteRequestor {
         };
         const validQuotes = quotes.filter(result => {
             const order = result.response;
-            if (!validationFunction(order)) {
-                this._warningLogger(result, 'Invalid RFQ-T firm quote received, filtering out');
-                return false;
-            }
-            if (
-                !hasExpectedAddresses([
-                    [makerToken, order.makerToken],
-                    [takerToken, order.takerToken],
-                    [options.takerAddress, order.taker],
-                    [options.txOrigin, order.txOrigin],
-                ])
-            ) {
-                this._warningLogger(
-                    order,
-                    'Unexpected token, tx origin or taker address in RFQ-T order, filtering out',
-                );
-                return false;
-            }
-            if (this._isExpirationTooSoon(new BigNumber(order.expiry))) {
-                this._warningLogger(order, 'Expiry too soon in RFQ-T firm quote, filtering out');
-                return false;
-            } else {
-                return true;
-            }
+            return this._validateQuote(order, result, validationFunction, [
+                [makerToken, order.makerToken],
+                [takerToken, order.takerToken],
+            ]);
         });
 
         // Save the maker URI for later and return just the order
@@ -598,20 +578,10 @@ export class QuoteRequestor {
         const validationFunction = (o: V4RFQIndicativeQuote) => this._isValidRfqtIndicativeQuoteResponse(o);
         const validQuotes = rawQuotes.filter(result => {
             const order = result.response;
-            if (!validationFunction(order)) {
-                this._warningLogger(result, 'Invalid RFQ indicative quote received, filtering out');
-                return false;
-            }
-            if (!hasExpectedAddresses([[makerToken, order.makerToken], [takerToken, order.takerToken]])) {
-                this._warningLogger(order, 'Unexpected token or taker address in RFQ order, filtering out');
-                return false;
-            }
-            if (this._isExpirationTooSoon(new BigNumber(order.expiry))) {
-                this._warningLogger(order, 'Expiry too soon in RFQ indicative quote, filtering out');
-                return false;
-            } else {
-                return true;
-            }
+            return this._validateQuote(order, result, validationFunction, [
+                [makerToken, order.makerToken],
+                [takerToken, order.takerToken],
+            ]);
         });
         const quotes = validQuotes.map(r => r.response);
         quotes.forEach(q => {
@@ -620,5 +590,28 @@ export class QuoteRequestor {
             q.expiry = new BigNumber(q.expiry);
         });
         return quotes;
+    }
+
+    // The QuoteType extending from V4RFQIndicativeQuote is a bit of a hack, as V4SignedRfqOrder technically satisfies that condition
+    private _validateQuote<QuoteType extends V4RFQIndicativeQuote>(
+        quote: QuoteType,
+        logData: any,
+        validationFunction: (q: QuoteType) => boolean,
+        expectedPairs: Array<[string, string]>,
+    ): boolean {
+        if (!validationFunction(quote)) {
+            this._warningLogger(logData, 'Invalid RFQ indicative quote received, filtering out');
+            return false;
+        }
+        if (!hasExpectedAddresses(expectedPairs)) {
+            this._warningLogger(quote, 'Unexpected token or taker address in RFQ order, filtering out');
+            return false;
+        }
+        if (this._isExpirationTooSoon(new BigNumber(quote.expiry))) {
+            this._warningLogger(quote, 'Expiry too soon in RFQ indicative quote, filtering out');
+            return false;
+        } else {
+            return true;
+        }
     }
 }
