@@ -130,7 +130,7 @@ export class SwapQuoter {
             },
             {},
             undefined,
-            { shouldOptimize: false },
+            { shouldOptimize: true },
         );
 
         this._marketOperationUtils = new MarketOperationUtils(

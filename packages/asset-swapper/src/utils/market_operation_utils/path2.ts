@@ -4,7 +4,6 @@ import { MarketOperation } from '../../types';
 
 import { POSITIVE_INF, ZERO_AMOUNT } from './constants';
 import { createBridgeOrder, createNativeOptimizedOrder, CreateOrderFromPathOpts, getMakerTakerTokens } from './orders';
-import { Path2 } from './path2';
 import { getCompleteRate, getRate } from './rate_utils';
 import {
     CollapsedFill,
@@ -34,26 +33,21 @@ export const DEFAULT_PATH_PENALTY_OPTS: PathPenaltyOpts = {
     exchangeProxyOverhead: () => ZERO_AMOUNT,
 };
 
-const isRust = () => process.env.RUST === 'true';
-
-export class Path {
+export class Path2 {
     public collapsedFills?: ReadonlyArray<CollapsedFill>;
     public orders?: OptimizedMarketOrder[];
     public sourceFlags: number = 0;
     protected _size: PathSize = { input: ZERO_AMOUNT, output: ZERO_AMOUNT };
     protected _adjustedSize: PathSize = { input: ZERO_AMOUNT, output: ZERO_AMOUNT };
-    private _bestFill!: Fill;
+    protected _bestFill!: Fill;
 
     public static create(
         side: MarketOperation,
         fills: ReadonlyArray<Fill>,
         targetInput: BigNumber = POSITIVE_INF,
         pathPenaltyOpts: PathPenaltyOpts = DEFAULT_PATH_PENALTY_OPTS,
-    ): Path {
-        // const path = new Path(side, fills, targetInput, pathPenaltyOpts);
-        const path = isRust()
-            ? (new Path2(side, fills, targetInput, pathPenaltyOpts) as any)
-            : new Path(side, fills, targetInput, pathPenaltyOpts);
+    ): Path2 {
+        const path = new Path2(side, fills, targetInput, pathPenaltyOpts);
         fills.forEach(fill => {
             path.sourceFlags |= fill.flags;
             path._addFillSize(fill);
@@ -61,20 +55,18 @@ export class Path {
         return path;
     }
 
-    public static clone(base: Path): Path {
-        const clonedPath = isRust()
-            ? (new Path2(base.side, base.fills.slice(), base.targetInput, base.pathPenaltyOpts) as any)
-            : new Path(base.side, base.fills.slice(), base.targetInput, base.pathPenaltyOpts);
-        // const clonedPath = new Path(base.side, base.fills.slice(), base.targetInput, base.pathPenaltyOpts);
+    public static clone(base: Path2): Path2 {
+        const clonedPath = new Path2(base.side, base.fills.slice(), base.targetInput, base.pathPenaltyOpts);
         clonedPath.sourceFlags = base.sourceFlags;
         clonedPath._size = { ...base._size };
         clonedPath._adjustedSize = { ...base._adjustedSize };
+        clonedPath._bestFill = { ...base._bestFill };
         clonedPath.collapsedFills = base.collapsedFills === undefined ? undefined : base.collapsedFills.slice();
         clonedPath.orders = base.orders === undefined ? undefined : base.orders.slice();
         return clonedPath;
     }
 
-    protected constructor(
+    constructor(
         protected readonly side: MarketOperation,
         public fills: ReadonlyArray<Fill>,
         protected readonly targetInput: BigNumber,
@@ -88,7 +80,7 @@ export class Path {
         return this;
     }
 
-    public addFallback(fallback: Path): this {
+    public addFallback(fallback: Path2): this {
         // If the last fill is Native and penultimate is not, then the intention was to partial fill
         // In this case we drop it entirely as we can't handle a failure at the end and we don't
         // want to fully fill when it gets prepended to the front below
@@ -140,8 +132,6 @@ export class Path {
     }
 
     public adjustedSize(): PathSize {
-        // We adjust by the ExchangeProxy overhead
-        // The input and output has previously been adjusted by the Source cost overhead
         const { input, output } = this._adjustedSize;
         const { exchangeProxyOverhead, outputAmountPerEth, inputAmountPerEth } = this.pathPenaltyOpts;
         const gasOverhead = exchangeProxyOverhead(this.sourceFlags);
@@ -188,7 +178,7 @@ export class Path {
         return rateChange.div(maxRate).toNumber();
     }
 
-    public isBetterThan(other: Path): boolean {
+    public isBetterThan(other: Path2): boolean {
         if (!this.targetInput.isEqualTo(other.targetInput)) {
             throw new Error(`Target input mismatch: ${this.targetInput} !== ${other.targetInput}`);
         }
@@ -290,21 +280,10 @@ export class Path {
             this._adjustedSize.input = this._adjustedSize.input.plus(fill.input);
             this._adjustedSize.output = this._adjustedSize.output.plus(fill.adjustedOutput);
         }
-
-        if (process.env.RUST !== 'true') {
-            if (
-                this._bestFill === undefined ||
-                getRate(this.side, this._bestFill.input, this._bestFill.output).isLessThan(
-                    getRate(this.side, fill.input, fill.output),
-                )
-            ) {
-                this._bestFill = fill;
-            }
-        }
     }
 }
 
-export interface CollapsedPath extends Path {
+export interface CollapsedPath extends Path2 {
     readonly collapsedFills: ReadonlyArray<CollapsedFill>;
     readonly orders: OptimizedMarketOrder[];
 }

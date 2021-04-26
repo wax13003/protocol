@@ -141,6 +141,12 @@ export class SamplerOperations {
         orders: SignedNativeOrder[],
         exchangeAddress: string,
     ): BatchedOperation<BigNumber[]> {
+        if (orders.length === 0) {
+            return SamplerOperations.constant<BigNumber[]>([]);
+        }
+        if (orders.length === 1 && orders[0].order.maker === NULL_ADDRESS) {
+            return SamplerOperations.constant<BigNumber[]>([ZERO_AMOUNT]);
+        }
         return new SamplerContractOperation({
             source: ERC20BridgeSource.Native,
             contract: this._samplerContract,
@@ -154,6 +160,12 @@ export class SamplerOperations {
         orders: SignedNativeOrder[],
         exchangeAddress: string,
     ): BatchedOperation<BigNumber[]> {
+        if (orders.length === 0) {
+            return SamplerOperations.constant<BigNumber[]>([]);
+        }
+        if (orders.length === 1 && orders[0].order.maker === NULL_ADDRESS) {
+            return SamplerOperations.constant<BigNumber[]>([ZERO_AMOUNT]);
+        }
         return new SamplerContractOperation({
             source: ERC20BridgeSource.Native,
             contract: this._samplerContract,
@@ -174,7 +186,18 @@ export class SamplerOperations {
             source: ERC20BridgeSource.Kyber,
             contract: this._samplerContract,
             function: this._samplerContract.sampleSellsFromKyberNetwork,
-            params: [{ ...kyberOpts, reserveOffset, hint: NULL_BYTES }, takerToken, makerToken, takerFillAmounts],
+            params: [
+                {
+                    reserveOffset,
+                    hintHandler: kyberOpts.hintHandler,
+                    networkProxy: kyberOpts.networkProxy,
+                    weth: kyberOpts.weth,
+                    hint: NULL_BYTES,
+                },
+                takerToken,
+                makerToken,
+                takerFillAmounts,
+            ],
             callback: (callResults: string, fillData: KyberFillData): BigNumber[] => {
                 const [reserveId, hint, samples] = this._samplerContract.getABIDecodedReturnData<
                     [string, string, BigNumber[]]

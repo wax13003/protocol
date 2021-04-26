@@ -1,5 +1,6 @@
 import { BigNumber } from '@0x/utils';
 import * as _ from 'lodash';
+import { performance } from 'perf_hooks';
 
 import { MarketOperation } from '../../types';
 
@@ -9,6 +10,8 @@ import { ERC20BridgeSource, Fill } from './types';
 // tslint:disable: prefer-for-of custom-no-magic-numbers completed-docs no-bitwise
 
 const RUN_LIMIT_DECAY_FACTOR = 0.5;
+
+const isRust = () => process.env.RUST === 'true';
 
 /**
  * Find the optimal mixture of fills that maximizes (for sells) or minimizes
@@ -21,20 +24,36 @@ export async function findOptimalPathAsync(
     runLimit: number = 2 ** 8,
     opts: PathPenaltyOpts = DEFAULT_PATH_PENALTY_OPTS,
 ): Promise<Path | undefined> {
+    let timeBefore = performance.now();
+
     // Sort fill arrays by descending adjusted completed rate.
     // Remove any paths which cannot impact the optimal path
     const sortedPaths = reducePaths(fillsToSortedPaths(fills, side, targetInput, opts), side);
+    console.log('optimize::sortReduce', performance.now() - timeBefore, 'ms');
+    timeBefore = performance.now();
     if (sortedPaths.length === 0) {
         return undefined;
     }
+
+    // const rates = rateBySourcePathId(side, fills, targetInput);
+    const rates = isRust()
+        ? rateBySourcePathIdNew(side, sortedPaths, targetInput)
+        : rateBySourcePathId(side, fills, targetInput);
+
+    console.log('optimize::rateBySource', performance.now() - timeBefore, 'ms');
+    timeBefore = performance.now();
+
     let optimalPath = sortedPaths[0];
-    const rates = rateBySourcePathId(side, fills, targetInput);
     for (const [i, path] of sortedPaths.slice(1).entries()) {
         optimalPath = mixPaths(side, optimalPath, path, targetInput, runLimit * RUN_LIMIT_DECAY_FACTOR ** i, rates);
         // Yield to event loop.
-        await Promise.resolve();
+        if (!isRust()) {
+            await Promise.resolve();
+        }
     }
-    return optimalPath.isComplete() ? optimalPath : undefined;
+    const finalPath = optimalPath.isComplete() ? optimalPath : undefined;
+    console.log('optimize::found', performance.now() - timeBefore, 'ms');
+    return finalPath;
 }
 
 // Sort fill arrays by descending adjusted completed rate.
@@ -45,10 +64,12 @@ export function fillsToSortedPaths(
     opts: PathPenaltyOpts,
 ): Path[] {
     const paths = fills.map(singleSourceFills => Path.create(side, singleSourceFills, targetInput, opts));
-    const sortedPaths = paths
+    if (isRust()) {
+        return paths.sort((a, b) => b.adjustedCompleteRate().comparedTo(a.adjustedCompleteRate()));
+    }
+    return paths
         .sort((a, b) => b.adjustedCompleteRate().comparedTo(a.adjustedCompleteRate()))
         .filter(a => a.adjustedCompleteRate().isGreaterThanOrEqualTo(0));
-    return sortedPaths;
 }
 
 // Remove paths which have no impact on the optimal path
@@ -135,4 +156,12 @@ function rateBySourcePathId(
             [s]: Path.create(side, flattenedFills.filter(f => f.sourcePathId === s), targetInput).adjustedRate(),
         })),
     );
+}
+
+function rateBySourcePathIdNew(
+    _side: MarketOperation,
+    paths: Path[],
+    _targetInput: BigNumber,
+): { [id: string]: BigNumber } {
+    return _.fromPairs(paths.map(p => [p.fills[0].sourcePathId, p.adjustedRate()]));
 }

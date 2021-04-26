@@ -861,15 +861,15 @@ export const MOONISWAP_REGISTRIES_BY_CHAIN_ID = valueByChainId(
 export const DODO_CONFIG_BY_CHAIN_ID = valueByChainId(
     {
         [ChainId.Mainnet]: {
-            helper: '0x533da777aedce766ceae696bf90f8541a4ba80eb',
             registry: '0x3A97247DF274a17C59A3bd12735ea3FcDFb49950',
+            helper: '0x533da777aedce766ceae696bf90f8541a4ba80eb',
         },
         [ChainId.BSC]: {
-            helper: '0x0f859706aee7fcf61d5a8939e8cb9dbb6c1eda33',
             registry: '0xca459456a45e300aa7ef447dbb60f87cccb42828',
+            helper: '0x0f859706aee7fcf61d5a8939e8cb9dbb6c1eda33',
         },
     },
-    { helper: NULL_ADDRESS, registry: NULL_ADDRESS },
+    { registry: NULL_ADDRESS, helper: NULL_ADDRESS },
 );
 
 export const DODOV2_FACTORIES_BY_CHAIN_ID = valueByChainId<string[]>(
@@ -899,9 +899,9 @@ export const MAKER_PSM_INFO_BY_CHAIN_ID = valueByChainId<PsmInfo>(
     {
         [ChainId.Mainnet]: {
             // Currently only USDC is supported
-            gemTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-            ilkIdentifier: formatBytes32String('PSM-USDC-A'),
             psmAddress: '0x89b78cfa322f6c5de0abceecab66aee45393cc5a',
+            ilkIdentifier: formatBytes32String('PSM-USDC-A'),
+            gemTokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
         },
     },
     {

@@ -1,5 +1,6 @@
 import { ChainId } from '@0x/contract-addresses';
 import { BigNumber, NULL_BYTES } from '@0x/utils';
+import { performance } from 'perf_hooks';
 
 import { SamplerOverrides } from '../../types';
 import { ERC20BridgeSamplerContract } from '../../wrappers';
@@ -147,11 +148,22 @@ export class DexOrderSampler extends SamplerOperations {
         return this.executeBatchAsync(ops);
     }
 
+    public encode<T extends Array<BatchedOperation<any>>>(ops: T): string {
+        const callDatas = ops.map(o => o.encodeCall());
+
+        const encoded = this._samplerContract
+            .batchCall(callDatas.filter(cd => cd !== NULL_BYTES))
+            .getABIEncodedTransactionData();
+
+        return encoded;
+    }
+
     /**
      * Run a series of operations from `DexOrderSampler.ops` in a single transaction.
      * Takes an arbitrary length array, but is not typesafe.
      */
     public async executeBatchAsync<T extends Array<BatchedOperation<any>>>(ops: T): Promise<any[]> {
+        let timeBefore = performance.now();
         const callDatas = ops.map(o => o.encodeCall());
         const { overrides, block } = this._samplerOverrides
             ? this._samplerOverrides
@@ -161,17 +173,27 @@ export class DexOrderSampler extends SamplerOperations {
         if (callDatas.every(cd => cd === NULL_BYTES)) {
             return callDatas.map((_callData, i) => ops[i].handleCallResults(NULL_BYTES));
         }
-        // Execute all non-empty calldatas.
-        const rawCallResults = await this._samplerContract
+        const encoded = this._samplerContract
             .batchCall(callDatas.filter(cd => cd !== NULL_BYTES))
-            .callAsync({ overrides }, block);
+            .getABIEncodedTransactionData();
+        console.log(`executeBatch::encode::${callDatas.length}`, performance.now() - timeBefore, 'ms');
+
+        timeBefore = performance.now();
+        // Execute all non-empty calldatas.
+        const rawCallResults = await this._samplerContract.batchCall([]).callAsync({ overrides, data: encoded }, block);
+        console.log('executeBatch::call', performance.now() - timeBefore, 'ms');
+
+        timeBefore = performance.now();
         // Return the parsed results.
         let rawCallResultsIdx = 0;
-        return callDatas.map((callData, i) => {
+        const results = callDatas.map((callData, i) => {
             // tslint:disable-next-line:boolean-naming
             const { data, success } =
                 callData !== NULL_BYTES ? rawCallResults[rawCallResultsIdx++] : { success: true, data: NULL_BYTES };
             return success ? ops[i].handleCallResults(data) : ops[i].handleRevert(data);
         });
+
+        console.log(`executeBatch::callResults::${rawCallResults.length}`, performance.now() - timeBefore, 'ms');
+        return results;
     }
 }
