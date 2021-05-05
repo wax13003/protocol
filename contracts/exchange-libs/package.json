@@ -52,7 +52,7 @@
     },
     "homepage": "https://github.com/0xProject/protocol/tree/main/contracts/libs",
     "devDependencies": {
-        "@0x/abi-gen": "^5.5.2",
+        "@0x/abi-gen": "0xProject/gitpkg-registry#0x-abi-gen-v5.6.0-2c933c7b0",
         "@0x/contracts-gen": "^2.0.37",
         "@0x/dev-utils": "^4.2.6",
         "@0x/sol-compiler": "^4.7.2",

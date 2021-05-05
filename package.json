@@ -27,8 +27,8 @@
         "install:all": "yarn install",
         "wsrun": "wsrun",
         "lerna": "lerna",
-        "build": "lerna link && wsrun -r --serial --fast-exit --exclude-missing $PKG -c build",
-        "build:ci": "lerna link && wsrun --fast-exit -r --serial --exclude-missing $PKG -c build:ci",
+        "build": "lerna link && wsrun --collect-logs -r --serial --fast-exit --exclude-missing $PKG -c build",
+        "build:ci": "lerna link && wsrun --collect-logs --fast-exit -r --serial --exclude-missing $PKG -c build:ci",
         "build:contracts": "lerna link && wsrun -p ${npm_package_config_contractsPackages} --fast-exit -r --stages --exclude-missing -c build",
         "build:ts": "tsc -b",
         "watch:ts": "tsc -b -w",
@@ -81,6 +81,8 @@
         "wsrun": "^5.2.4"
     },
     "resolutions": {
-        "merkle-patricia-tree": "^2.3.2"
+        "merkle-patricia-tree": "^2.3.2",
+        "@0x/abi-gen": "0xProject/gitpkg-registry#0x-abi-gen-v5.6.0-2c933c7b0",
+        "handlebars": "4.7.7"
     }
 }
