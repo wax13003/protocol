@@ -2,11 +2,11 @@ version: 2
 
 jobs:
     build:
-        resource_class: medium+
+        resource_class: large
         docker:
-            - image: nikolaik/python-nodejs:python3.7-nodejs10
+            - image: nikolaik/python-nodejs:python3.7-nodejs12
         environment:
-            CONTRACTS_COMMIT_HASH: '9ed05f5'
+            NODE_OPTIONS: '--max-old-space-size=8192'
         working_directory: ~/repo
         steps:
             - checkout
