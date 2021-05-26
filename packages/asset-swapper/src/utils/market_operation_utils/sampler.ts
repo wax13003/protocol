@@ -1,5 +1,6 @@
 import { ChainId } from '@0x/contract-addresses';
 import { BigNumber, NULL_BYTES } from '@0x/utils';
+import { env } from 'process';
 
 import { SamplerOverrides } from '../../types';
 import { ERC20BridgeSamplerContract } from '../../wrappers';
@@ -151,10 +152,11 @@ export class DexOrderSampler extends SamplerOperations {
         if (callDatas.every(cd => cd === NULL_BYTES)) {
             return callDatas.map((_callData, i) => ops[i].handleCallResults(NULL_BYTES));
         }
+        console.log(env.SAMPLE_BLOCK);
         // Execute all non-empty calldatas.
         const rawCallResults = await this._samplerContract
             .batchCall(callDatas.filter(cd => cd !== NULL_BYTES))
-            .callAsync({ overrides }, block);
+            .callAsync({ overrides }, env.SAMPLE_BLOCK ? parseInt(env.SAMPLE_BLOCK) : undefined);
         // Return the parsed results.
         let rawCallResultsIdx = 0;
         return callDatas.map((callData, i) => {

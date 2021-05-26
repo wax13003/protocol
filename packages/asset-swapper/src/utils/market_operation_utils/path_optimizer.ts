@@ -1,5 +1,7 @@
 import { BigNumber } from '@0x/utils';
 import * as _ from 'lodash';
+import { env } from 'process';
+import * as  fs from 'fs';
 
 import { MarketOperation } from '../../types';
 
@@ -34,7 +36,78 @@ export async function findOptimalPathAsync(
         // Yield to event loop.
         await Promise.resolve();
     }
+    saveFindOptimalPathResult(side, targetInput, fills, optimalPath);
     return optimalPath.isComplete() ? optimalPath : undefined;
+}
+
+function saveFindOptimalPathResult(
+    side: MarketOperation,
+    targetInput: BigNumber,
+    fills: Fill[][],
+    optimalPath: Path,
+): void {
+    const annotationToFillId = createAnnotationToFillId(fills);
+    fs.appendFileSync(
+        env.HOOK_OUTPUT as string,
+        JSON.stringify({
+            side,
+            targetInput: targetInput.toNumber(),
+            pathsIn: fills.map(p => serializePath(p, annotationToFillId)),
+            pathOut: serializePath(optimalPath.fills.slice(), annotationToFillId),
+        }) + '\n'
+    );
+}
+
+interface AnnotationToFillId {
+    [annotation: string]: number;
+}
+
+function createAnnotationToFillId(fills: Fill[][]): AnnotationToFillId  {
+    let n = 0;
+    const m: AnnotationToFillId = {};
+    for (const p of fills) {
+        for (const f of p) {
+            m[getFilAnnotation(f)] = n++;
+        }
+    }
+    return m;
+}
+
+interface OptimizerCapture {
+    side: number; // 0 = sell, 1 = buy
+    targetInput: number; // Amount to sell/buy
+    pathsIn: SerializedPath[]; // Input samples
+    pathOut: SerializedPath; // Output/optimized path.
+}
+
+interface SerializedPath {
+    __annotations__: string[]; // debug data for each sample
+    ids: number[]; // unique ID for each sample, used to reconstruct the result in TS.
+    inputs: number[]; // sample inputs (taker amount for sells, maker amounts for buys)
+    outputs: number[]; // sample outputs (maker amounts for sells, taker amounts for buys)
+}
+
+function getFilAnnotation(f: Fill): string {
+    return `${f.source}-${f.sourcePathId}-${f.index}`;
+}
+
+function serializePath(fills: Fill[], annotationToFillId: AnnotationToFillId): SerializedPath {
+    const s: SerializedPath = {
+        __annotations__: [],
+        ids: [],
+        inputs: [],
+        outputs: [],
+    };
+    let inputSum = new BigNumber(0);
+    let outputSum = new BigNumber(0);
+    for (const f of fills) {
+        const annotation = getFilAnnotation(f);
+        s.inputs.push((inputSum = f.input.plus(inputSum)).toNumber());
+        s.outputs.push((outputSum = f.adjustedOutput.plus(outputSum)).toNumber());
+        s.__annotations__.push(annotation);
+        s.ids.push(annotationToFillId[annotation]);
+    }
+    return s;
 }
 
 // Sort fill arrays by descending adjusted completed rate.
