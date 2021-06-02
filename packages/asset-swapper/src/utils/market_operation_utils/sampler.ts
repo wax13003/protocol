@@ -24,7 +24,7 @@ export function getSampleAmounts(maxFillAmount: BigNumber, numSamples: number, e
             .times(BigNumber.sum(...[0, ...stepSizes.slice(0, i + 1)]))
             .integerValue(BigNumber.ROUND_UP);
     });
-    return amounts;
+    return [ new BigNumber(0), ...amounts ];
 }
 
 type BatchedOperationResult<T> = T extends BatchedOperation<infer TResult> ? TResult : never;
