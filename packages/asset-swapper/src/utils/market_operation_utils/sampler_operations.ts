@@ -902,6 +902,7 @@ export class SamplerOperations {
         takerFillAmounts: BigNumber[],
         source: ERC20BridgeSource = ERC20BridgeSource.Shell,
     ): SourceQuoteOperation<ShellFillData> {
+        console.log(takerFillAmounts[0]);
         return new SamplerContractOperation({
             source,
             fillData: { poolAddress },
