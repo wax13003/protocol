@@ -189,6 +189,13 @@ export class MarketOperationUtils {
             ...getNativeAdjustedFillableAmountsFromTakerAmount(order, orderFillableTakerAmounts[i]),
         }));
 
+        for (const q of dexQuotes) {
+            if (q.length) {
+                q.splice(0, 0, { ...q[0], input: ZERO_AMOUNT, output: ZERO_AMOUNT });
+            }
+        }
+        console.log(dexQuotes.filter(q => q.length).map(q => `${q[0].source}-${q[q.length-1].output}`));
+
         return {
             side: MarketOperation.Sell,
             inputAmount: takerAmount,
@@ -289,6 +296,13 @@ export class MarketOperationUtils {
             ...order,
             ...getNativeAdjustedFillableAmountsFromMakerAmount(order, orderFillableMakerAmounts[i]),
         }));
+
+        for (const q of dexQuotes) {
+            if (q.length) {
+                q.splice(0, 0, { ...q[0], input: ZERO_AMOUNT, output: ZERO_AMOUNT });
+            }
+        }
+        console.log(dexQuotes.filter(q => q.length).map(q => `${q[0].source}-${q[q.length-1].output}`));
 
         return {
             side: MarketOperation.Buy,

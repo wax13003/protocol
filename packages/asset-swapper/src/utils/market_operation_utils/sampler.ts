@@ -24,9 +24,6 @@ export function getSampleAmounts(maxFillAmount: BigNumber, numSamples: number, e
             .times(BigNumber.sum(...[0, ...stepSizes.slice(0, i + 1)]))
             .integerValue(BigNumber.ROUND_UP);
     });
-    if (numSamples > 1) {
-        return [ new BigNumber(0), ...amounts ];
-    }
     return amounts;
 }
 
@@ -155,11 +152,10 @@ export class DexOrderSampler extends SamplerOperations {
         if (callDatas.every(cd => cd === NULL_BYTES)) {
             return callDatas.map((_callData, i) => ops[i].handleCallResults(NULL_BYTES));
         }
-        console.log(env.SAMPLE_BLOCK);
         // Execute all non-empty calldatas.
         const rawCallResults = await this._samplerContract
             .batchCall(callDatas.filter(cd => cd !== NULL_BYTES))
-            .callAsync({ overrides }, env.SAMPLE_BLOCK ? parseInt(env.SAMPLE_BLOCK) : undefined);
+            .callAsync({ overrides }, env.SAMPLE_BLOCK ? parseInt(env.SAMPLE_BLOCK) || undefined : undefined);
         // Return the parsed results.
         let rawCallResultsIdx = 0;
         return callDatas.map((callData, i) => {
