@@ -27,7 +27,7 @@ export function getSampleAmounts(maxFillAmount: BigNumber, numSamples: number, e
     if (numSamples > 1) {
         return [ new BigNumber(0), ...amounts ];
     }
-    return [ new BigNumber(0), ...amounts ];
+    return amounts;
 }
 
 type BatchedOperationResult<T> = T extends BatchedOperation<infer TResult> ? TResult : never;
