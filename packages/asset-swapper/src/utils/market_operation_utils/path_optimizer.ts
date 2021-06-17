@@ -21,6 +21,7 @@ export async function findOptimalPathAsync(
     fills: Fill[][],
     targetInput: BigNumber,
     runLimit: number = 2 ** 8,
+    pair: string[],
     opts: PathPenaltyOpts = DEFAULT_PATH_PENALTY_OPTS,
 ): Promise<Path | undefined> {
     // Sort fill arrays by descending adjusted completed rate.
@@ -36,7 +37,9 @@ export async function findOptimalPathAsync(
         // Yield to event loop.
         await Promise.resolve();
     }
-    saveFindOptimalPathResult(side, targetInput, fills, optimalPath);
+    if (pair.length == 2) {
+        saveFindOptimalPathResult(side, targetInput, fills, optimalPath, pair);
+    }
     return optimalPath.isComplete() ? optimalPath : undefined;
 }
 
@@ -45,12 +48,15 @@ function saveFindOptimalPathResult(
     targetInput: BigNumber,
     fills: Fill[][],
     optimalPath: Path,
+    pair: string[],
 ): void {
     const annotationToFillId = createAnnotationToFillId(fills);
     fs.appendFileSync(
         env.HOOK_OUTPUT as string,
         JSON.stringify({
             side,
+            inputToken: pair[0],
+            outputToken: pair[1],
             targetInput: targetInput.toNumber(),
             pathsIn: fills.map(p => serializePath(p, annotationToFillId)),
             pathOut: serializePath(optimalPath.fills.slice(), annotationToFillId),
@@ -85,6 +91,7 @@ interface SerializedPath {
     ids: number[]; // unique ID for each sample, used to reconstruct the result in TS.
     inputs: number[]; // sample inputs (taker amount for sells, maker amounts for buys)
     outputs: number[]; // sample outputs (maker amounts for sells, taker amounts for buys)
+    outputFees: number[]; // output token denominated gas cost/fee for consuming the source (<= 0 for sells, >= 0 for buys)
 }
 
 function getFilAnnotation(f: Fill): string {
@@ -97,13 +104,16 @@ function serializePath(fills: Fill[], annotationToFillId: AnnotationToFillId): S
         ids: [],
         inputs: [],
         outputs: [],
+        outputFees: [],
     };
     let inputSum = new BigNumber(0);
     let outputSum = new BigNumber(0);
+    const fee = fills[0].adjustedOutput.minus(fills[0].output).toNumber();
     for (const f of fills) {
         const annotation = getFilAnnotation(f);
         s.inputs.push((inputSum = f.input.plus(inputSum)).toNumber());
-        s.outputs.push((outputSum = f.adjustedOutput.plus(outputSum)).toNumber());
+        s.outputs.push((outputSum = f.output.plus(outputSum)).toNumber());
+        s.outputFees.push(fee);
         s.__annotations__.push(annotation);
         s.ids.push(annotationToFillId[annotation]);
     }

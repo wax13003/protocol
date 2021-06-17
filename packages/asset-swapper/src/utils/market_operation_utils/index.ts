@@ -499,7 +499,7 @@ export class MarketOperationUtils {
         const unoptimizedPath = _unoptimizedPath ? _unoptimizedPath.collapse(orderOpts) : undefined;
 
         // Find the optimal path
-        const optimalPath = await findOptimalPathAsync(side, fills, inputAmount, opts.runLimit, penaltyOpts);
+        const optimalPath = await findOptimalPathAsync(side, fills, inputAmount, opts.runLimit, [marketSideLiquidity.inputToken, marketSideLiquidity.outputToken], penaltyOpts);
         const optimalPathRate = optimalPath ? optimalPath.adjustedRate() : ZERO_AMOUNT;
 
         const { adjustedRate: bestTwoHopRate, quote: bestTwoHopQuote } = getBestTwoHopQuote(
@@ -535,7 +535,7 @@ export class MarketOperationUtils {
             // We create a fallback path that is exclusive of Native liquidity
             // This is the optimal on-chain path for the entire input amount
             const sturdyFills = fills.filter(p => p.length > 0 && !fragileSources.includes(p[0].source));
-            const sturdyOptimalPath = await findOptimalPathAsync(side, sturdyFills, inputAmount, opts.runLimit, {
+            const sturdyOptimalPath = await findOptimalPathAsync(side, sturdyFills, inputAmount, opts.runLimit, [], {
                 ...penaltyOpts,
                 exchangeProxyOverhead: (sourceFlags: number) =>
                     // tslint:disable-next-line: no-bitwise
